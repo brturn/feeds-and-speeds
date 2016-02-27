@@ -1,0 +1,210 @@
+<html>
+<!--
+    COPYRIGHT 2015-2016, Bryan Turner
+    ALL RIGHTS RESERVED
+
+    Errors, Omissions, and PayPal donations to: bryan.turner@pobox.com
+-->
+
+	<head>
+		<title>Instructions for Milling Feeds and Speeds Calculator</title>
+        <style type="text/css">
+            body  {padding: 20px;}
+            input {margin-bottom: 5px; padding: 2px 3px; width: 6em; float: right; }
+            td    {padding: 4px;}
+
+            div.container {
+                width: 100%;
+                margin: 0px;
+                border: 1px solid gray;
+                line-height: 150%;
+            }
+
+            div.header, div.footer {
+                padding: 0.5em;
+                background-color: #CCCCCC;
+                clear: left;
+            }
+
+            h1.header {
+                padding: 0;
+                margin: 0;
+            }
+
+            div.left {
+                
+                margin: 0;
+                padding: 1em;
+            }
+
+            div.content {
+                padding: 1em;
+            }
+
+            ul {
+                padding: 0.4em;
+            }
+
+            li {
+                padding: 0.2em 0.6em;
+            }
+
+            div.results li { width: 16em; }
+            div.results ul li ul li { width: 6em; border: none;}
+
+
+        </style>
+    </head>
+
+	<body>
+        <!-- Donation button -->
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <h2 class="header" style="display: inline;">Milling Speeds &amp; Feeds</h2>
+            <input type="hidden" name="cmd" value="_s-xclick"/>
+            <input type="hidden" name="hosted_button_id" value="UXF9L3E8TEVJA"/>
+            <input type="image" style="float: none;" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="Donate!"/>
+        </form>
+
+        <p>
+		Instructions for the Optimizing Speeds &amp; Feeds Calculator:
+        <ul>
+            <li><a href="#beginner">For Beginners</a></li>
+            <li><a href="#instructions">How to use the Calculator</a></li>
+            <li><a href="#glossary">Glossary of Terms</a></li>
+            <li><a href="#example">Example of Use</a></li>
+        </ul>
+		</p>
+
+		<hr>
+
+        <h3 id="beginner">Beginners - READ ME</h3>
+        Most CAM software does not generate toolpaths with constant tool engagements.  If you blindly use the data from this (or any!) calculator you will break bits.  Until you become more familiar with the intricacies of CAM programming, follow these simple rules:
+        <ul>
+            <li>Really measure your tool's stickout - it's important!  Try to minimize the stickout by using the shortest bit that can do the work, and sliding the bit as far as possible into the tool holder.</li>
+            <li>Set the min and max Width of Cut (WOC) to be the same as the tool's DIAMETER. This is called a 'full slot' cut, and will provide safer speeds &amp; feeds. <small>(tip: leave a few thousandths difference between min and max)</small></li>
+            <li>Get the maximum 'Surface Feet per Minute' (max SFM) and maximum 'Chipload' (also called Inches per Tooth - IPT) values from your tool vendor, tell them you are 'slotting'.</li>
+            <li>Enter all the values and press 'Calculate'.</li>
+            <li>Program your CAM to use the displayed RPM and IPM, but use only 50% of the depth (ie: if the results show 0.2" DOC, then program your CAM to use only 0.1" DOC).</li>
+            <li>Check how nice the cut looks - smooth sides and bottom?  No chatter?  Gradually increase the DOC until your tool, machine, material, or clamping complains.</li>
+            <li>Repeat this procedure for every cutter and material combination.</li>
+        </ul>
+
+	    <h3 id="instructions">How to use this calculator:</h3>
+	    <ul>
+	    	<li>Fill in each box to the best of your knowledge.</li>
+		    <li>Get SFM and Chipload from your tool vendor.</li>
+		    <li>Press "Calculate" to generate cut parameters.</li>
+		    <li>Check graphs at bottom to compare different cuts, look for clusters of bubbles.</li>
+		    <li>Refine the entries in the calcuator to 'zoom in' on the clusters and explore their parameters.</li>
+            <li>Each time you press Calculate, 100 new cut variations are tried.  The best 20 cuts (by MRR) from all runs will be shown in the graphs.</li>
+		</ul>
+
+	    <h3>What do the colors mean?</h3>
+	    <ul>
+			<li>Light Blue: parameters which may be limiting the variety of offered cuts (ie: max DOC may be highlighted if you are cutting too shallowly)</li>
+	    	<li>Orange: the highlighted parameters are near their range limits.</li>
+	    	<li>Pink/Red input field: The input is invalid, or min == max (leave a few thou between min and max).</li>
+            <li>Pink/Red results: the cut optimizer failed -- DO NOT USE the displayed cut parameters.</li>
+	    </ul>
+
+	    <h3 id="glossary">What are all these acronyms?</h3>
+	    <ul>
+        	<li><b>RPM - Revolutions per Minute:</b> How fast the machine's spindle can turn.</li>
+        	<li><b>RPM at Peak Torque:</b> RPM value at which the motor generates maxium torque (power).  For constant-torque motors (ie: geared speed selection, etc), just enter a value larger than your max RPM</li>
+        	<li><b>IPM - Inches Per Minute:</b> How fast can the machine move?</li>
+        	<li><b>HP at Spindle:</b> How much power (horsepower) is delivered to the spindle?  Typically, this is lower than the horsepower at the motor.</li>
+        	<li><b>Modulus of Elasticity:</b> A measure of how 'floppy' the tool material is.  High Speed Steel (HSS) bends more easily than Carbide, so HSS tools have a lower Modulus of Elasticity than Carbide tools.</li>
+        	<li><b>Diameter:</b> The nominal diameter of the tool.</li>
+        	<li><b>Teeth:</b> How many teeth (flutes) does the tool have?</li>
+        	<li><b>Ballnose? :</b> Is this a ballnose (hemispherical) cutter?</li>
+        	<li><b>Stickout:</b> Distance from the tool holder to the tip of the cutting tool.</li>
+        	<li><b>Flute Length:</b> The length of the cutting edges on the tool.</li>
+        	<li><b>Helix Angle:</b> Angle at which the teeth spiral up the tool; measured off vertical (vertical cutting edges = 0-degree helix angle)</li>
+        	<li><b>Unit Power:</b> The horsepower needed to remove 1 cubic inch of material in 1 minute.</li>
+        	<li><b>SFM - Surface Feet per Minute:</b> How fast can the workpiece be presented to the tool without stressing the tool?</li>
+        	<li><b>Chipload - Inches per Tooth (IPT):</b> The amount of material each flute 'bite' at one time.  Your cutting tool vendor will give you this information.  Typically expressed as percentage of the tool Diameter.</li>
+        	<li><b>DOC - Depth of Cut:</b> Also known as Axial Depth of Cut (ADOC).  The distance along the tool's axis that will be contacting material for cutting (typically in the Z axis).</li>
+        	<li><b>WOC - Width of Cut:</b> Also known as Radial Depth of Cut (RDOC).  The distance along the tool's diameter that will be contacting material for cutting (typically in the X/Y axis).</li>
+        	<li><b>MRR - Material Removal Rate:</b> Cubic inches of material removed per minute.</li>
+        	<li><b>Deflection:</b> How far the tool tip deflects from its centerline while making this cut.</li>
+        	<li><b>Cusp Height:</b> For ballnose/corner-rounded cutters, this is the height of the uncut material between sequential passes at the current width and depth of cut.</li>
+        	<li><b>Reserve HP:</b> The percentage of horsepower to keep in reserve (this is useful when the tool is suddenly plunged into a corner).</li>
+        	<li><b>Reserve Torque:</b> The percentage of torque to keep in reserve (this is useful when the tool is suddenly plunged into a corner).</li>
+        	<li><b>Adaptive:</b> Check this box if your toolpath is "constant engagement", sometimes called "adaptive roughing" or "high speed machining".  Specifically; this box turns on radial chip-thinning and the resulting feeds &amp; speeds will snap tools quickly if they run into a tight corner or experience interrupted cutting.</li>
+        	<li><b>Plunge:</b> The feed rate (IPM) to use when plunging.  WARNING: This value should only be used when the calcuated feeds and speeds are for full slotting.</li>
+        	<li><b>Torque:</b> The inch-pounds of force being delivered to the cutting edges.</li>
+        	<li><b>Radial - Radial Chip Thinning Factor (RCTF)</b> The speed factor applied to the IPM when running light profile cuts (see: Adaptive).</li>
+            <li><b>Axial - Axial Chip Thinning Factor (ACTF)</b> The speed factor applied to the IPM when running low-depth ballnose cuts (see: Adaptive).</li>
+        	<li><b>Feed Adj. - Feed Correction Factor (FCF):</b> RCTF * ACTF = The total feed correction applied due to chip thinning (see: Adaptive).</li>
+        	<li><b>Adj. IPT:</b> The chipload (Inches per Tooth) after correction by the FCF (see: Adaptive).</li>
+        	<li><b>Eff. Diameter:</b> The Effective Diameter of the tool at the current depth of cut (only affects ballnose cutters).</li>
+        	<li><b>TEA - Tool Engagement Angle:</b> The number of degrees of arc along which the live tool is cutting material.  The maximum of 180-degrees is a full slot cut.</li>
+	    </ul>
+
+        <h3 id="example">Can you walk me through an example?</h3>
+        Sure!
+        <ul>
+            <li>I own a Tormach 770 milling machine.</li>
+            <li>I bought a bunch of HTC Tool's double-ended 3/8" HSS 3-Flute cutters to use for roughing 6061-T6 Aluminum.</li>
+            <li>Here's how I used the Calculator to select speeds, feeds and depth-of-cut for this endmill.</li>
+        </ul>
+        <ul>
+            <li>The Tormach 770 is: 1 HP, 525-10350 RPM for the high speed range, max 135 IPM</li>
+            <li>Peak Torque RPM: 5020  <small>WHY: Motors like mine generate their peak torque at their 'native' drive frequency.  I look on the motor housing to see this one is rated for 60 Hz power.  Due to pulleys, the Tormach's spindle doesn't drive the motor in 1:1 ratio with the commanded speed, so the RPM listed on the motor housing is not useful.  Instead, I commanded the speed of the motor using Mach 3 then read the display of the VFD to see what Hz it was generating.  At a commanded speed of 5020 RPM, the VFD generated 60 Hz, so this is the value I use for "Peak Torque RPM".  I only have to test this once for this machine, it won't change unless the drive chain is modified.</small></li>
+            <li>The tool is HSS (27x10^6 PSI), 0.375" diameter, 3-teeth, with a Helix angle of approximately 30-degrees (by sight).</li>
+            <li>Stickout: I mounted the tool in the tool holder and slid it as far in as I felt comfortable, which left 0.9" of the tool sticking out.</li>
+            <li>Material: Aluminum (which selects Unit Power, SFM and Chipload automatically).</li>
+            <li>I'm using these end mills for slotting, so I set WOC to 0.375".  <small>TIP: Sometimes it's hard to read the graphs when the bubbles are all on top of each other.  To ease this, leave a few thousandths between the min and max of any value.  In this case I entered min WOC 0.373" and max WOC of 0.375".</small></li>
+            <li>For the DOC I left things wide open: 0.01" - 0.75" <small>(the max was chosen because these cutters only have 0.75" of sharpened flute)</small></li>
+            <li>I left maximum Deflection at its default of 0.001".  For a finish cut I might lower it to 0.0005 or less.</li>
+            <li>Finally, since this is a full-slot cut there will not be any issues with the cutter suddenly slamming into a corner of a pocket, thus I select only 5% reserve HP and Torque.  Adaptive roughing remains off because this toolpath will not be generated using my CAM's adaptive roughing strategy.</li>
+        </ul>
+
+        Ok!  Those are my parameters; I only had to find one value by measuring the stickout.
+        <ul>
+            <li>I hit Calculate once and scroll down to view the graphs.</li>
+            <li>The 'heat map' of the graph spans MRR rates from 2.71 up to 3.3 MRR.  That's a pretty wide range and I want to be heavy roughing (high MRR), so I press Calculate a few more times to gather more results.  The low-end MRR climbs up to 3.31 while the high end creeps up to 3.39.  A few more button presses and it narrows to 3.31-3.39, which tells me it has collected essentially all of the highest-MRR cuts for this set of parameters.</li>
+            <li>A quick scan of the graph tells me that the bubbles are clustered at low-DOC values, only a few points are deeper than 0.4".  This suggests I should focus the search at shallower depths.</li>
+            <li>I change the max DOC to 0.4" and press Calculate a few times.</li>
+            <li>Again, I see the DOC bubbles are clustered, now below 0.25".  Rinse, repeat with max DOC of 0.25".</li>
+            <li>This time the bubbles are pretty even, offering a DOC range of 0.16" to 0.25", this is plenty to play with for now, so I move on to analyze the other parameters.</li>
+            <li>Next I look at the RPM / IPM graph.  Things are pretty even here too, with a cluster of "deep-but-slow" cuts around 0.25" DOC with 5700 RPM / 35 IPM and another cluster of "fast-but-shallow" cuts around 0.21" DOC with 6100 RPM / 42 IPM.</li>
+        </ul>
+
+        Test Cut
+        <ul>
+            <li>I write down the cuts to test on the machine and head out to the shop.</li>
+            <li>Since I've never run this cutter, or these parameters I will program the machine to use only 50% of the DOC shown in the calculator.  This will go 'light' on the machine while still letting me hear and see the results of the selected parameters.</li>
+            <li>I clamp a test block of aluminum on the mill and run the cutter (at 50% of the DOC, 0.1") in a long straight line through the material (8" total length).  This allows enough time for the spindle to settle into the cut and tell me if it is slowing down (not enough power), chattering (too fast/deep), etc.</li>
+            <li>It's good!  It sounds smooth and the chips are small, shiny and only slightly curled, suggesting an efficient use of the machine's power.</li>
+            <li>Since the half-depth cut ran so well, I run it again at the full depth of 0.2".</li>
+            <li>Oh no!  After about 5" of smooth sounding cut length the spindle stopped abruptly.  Luckily the tool is strong enough not to snap as the machine tries to shove it through solid metal!</li>
+            <li>Since the cut sounded smooth up to that point, I surmise that the machine's power and torque are adequate to the task, it must be something else going wrong.</li>
+            <li>I examine the bit to find aluminum welded to the cutting edges, which means it was either getting too hot (unlikely since I'm using flood coolant), or the cut parameters are not allowing the chips to evacuate from the cutter - instead they pile up in the flutes until it is clogged.</li>
+            <li>Two methods to fix this are: reduce DOC, or reduce Chipload.</li>
+        </ul>
+
+        Back to the Calculator!
+        <ul>
+            <li>I decided to reduce the DOC, since I've had good results with that technique when slotting with small bits.</li>
+            <li>Since the cut worked fine at 0.1" DOC, but not at 0.2", I picked a new max DOC of 0.15".</li>
+            <li>A few clicks on the Calculate button results in only one contender; 6100 RPM / 42 IPM for 0.15" DOC.</li>
+            <li>Since I've run into chip weld issues, I also run two more variations of the same cut; each about 0.0005" less chipload than the previous.  This requires moving the Material selection from "Aluminum" to "CUSTOM" to unlock the chipload inputs.</li>
+            <li>Entering the new chipload and caclulating for each variation results in:</li>
+            <li>0.15" DOC, 0.0015" IPT, 27 IPM, 6100 RPM</li>
+            <li>0.15" DOC, 0.0020" IPT, 36 IPM, 6100 RPM</li>
+            <li>0.15" DOC, 0.0023" IPT, 42 IPM, 6100 RPM</li>
+            <li>I run the first one - cuts great!</li>
+            <li>I run the second one - cuts great!</li>
+            <li>I run the third one - cuts great!  But, by the end of the 8" long cut, I can hear the spindle starting to slow down.  This indicates that while the cutter, coolant, and material are behaving well, the spindle is not delivering enough power to maintain the cut.</li>
+            <li>I stop here and pick the 36 IPM parameter as the final selection, giving me 2.06 MRR.</li>
+        </ul>
+
+        So there you have it - how I used this calculator to pick the feeds &amp; speeds for a new cutting tool!
+
+	    <hr>
+
+	    Copyright 2015-2016. All Rights Reserved. Bryan Turner (<a href="mailto:bryan.turner@pobox.com">bryan.turner@pobox.com</a>)
+
+	</body>
+</html>

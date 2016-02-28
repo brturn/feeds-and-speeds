@@ -1,5 +1,6 @@
 # feeds-and-speeds
 Optimizing Feeds &amp; Speeds Calculator for CNC Milling
 
-See instructions file:
-https://github.com/brturn/feeds-and-speeds/blob/master/instructions.html
+[GitHub Hosted Calculator](http://brturn.github.io/feeds-and-speeds)
+
+[GitHub Hosted Instructions](http://brturn.github.io/feeds-and-speeds/instructions.html)

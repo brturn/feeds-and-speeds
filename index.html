@@ -89,10 +89,11 @@
 
     <div class="header"><b class="header">Machine</b></div>
     <ul>
+        <li><input type="checkbox" id="in_METRIC" onclick="convertAll()">Metric?</li>
         <li>RPM             <small>(min, max)</small>   <input id="max_RPM" value="10350">              <input id="min_RPM" value="525">    </li>
         <li>RPM at Peak Torque                          <input id="in_PEAK_TORQUE_RPM" value="5020">                                        </li>
-        <li>IPM             <small>(min, max)</small>   <input id="max_IPM" value="135">                <input id="min_IPM" value="1">      </li>
-        <li>HP at Spindle                               <input id="max_HP" value="1"></li>
+        <li>Feed            <small>(min, max)</small>   <input id="max_IPM" value="135">                <input id="min_IPM" value="1">      </li>
+        <li>Spindle Power                               <input id="max_HP" value="1"></li>
     </ul>
 
     <div class="header"><b class="header">Tool</b></div>
@@ -126,13 +127,13 @@
             </select>
         </li>
         <li>Unit Power                              <input id="in_UNITPOWER" value="0.33"></li>
-        <li>SFM         <small>(min, max)</small>   <input id="max_SFM" value="600">           <input id="min_SFM" value="100"></li>
+        <li>SFM         <small>(min, max)</small>   <input id="max_SFM" value="600">            <input id="min_SFM" value="100"></li>
         <li>Chipload    <small>(min, max)</small>   <input id="max_CHIPLOAD" value="0.01">      <input id="min_CHIPLOAD" value="0.0008"></li>
     </ul>
 
     <div class="header"><b class="header">Cut</b></div>
     <ul>
-        <li>DOC         <small>(min, max)</small>   <input id="max_DOC" value="0.75">            <input id="min_DOC" value="0.01"></li>
+        <li>DOC         <small>(min, max)</small>   <input id="max_DOC" value="0.75">           <input id="min_DOC" value="0.01"></li>
         <li>WOC         <small>(min, max)</small>   <input id="max_WOC" value="0.375">          <input id="min_WOC" value="0.01"></li>
         <li>Deflection  <small>(max)</small>        <input id="max_DEFLECTION" value="0.001"></li>
         <li>Reserve HP %                            <input id="in_RESERVE_HP"     value="5"></li>
@@ -146,9 +147,9 @@
     </div>
     <div id="OUT" class="results">
         <ul>
-            <li><ul><li><b>RPM</b>       </li><li id="RPM"    style="font-weight: bold;"/></ul></li>
-            <li><ul><li><b>IPM</b>       </li><li id="IPM"    style="font-weight: bold;"/></ul></li>
-            <li><ul><li><b>Plunge IPM</b></li><li id="PLUNGE" style="font-weight: bold;"/></ul></li>
+            <li><ul><li><b>RPM</b>   </li><li id="RPM"    style="font-weight: bold;"/></ul></li>
+            <li><ul><li><b>Feed</b>  </li><li id="IPM"    style="font-weight: bold;"/></ul></li>
+            <li><ul><li><b>Plunge</b></li><li id="PLUNGE" style="font-weight: bold;"/></ul></li>
         </ul>
         <ul>
             <li><ul><li>DOC </li><li id="DOC"/></ul></li>
@@ -158,7 +159,7 @@
         <div class="header"><b class="header">ADVANCED</b></div>
         <ul>
             <li><ul><li>MRR        </li><li id="MRR"/></ul></li>
-            <li><ul><li>HP         </li><li id="HP"/></ul></li>
+            <li><ul><li>Cut Power  </li><li id="HP"/></ul></li>
             <li><ul><li>Deflection </li><li id="DEFLECTION"/></ul></li>
         </ul>
         <ul>
@@ -237,10 +238,22 @@
     // by Bryan Turner, 2015-2016
     // All rights reserved.
 
-    // TODO: Metric constants/conversions
     var OneHP = 33000;         // (lb-ft) per minute
     var InchesPerFoot = 12;
     var PI = Math.PI;
+
+    // Metric Input Conversions (reverse for output)
+    var SMMtoSFM     = 3.28083;     // SMM -> SFM
+    var mmToInch     = 0.03937;     // mm -> Inch
+    var KWToHP       = 1.34102;     // KW -> HP
+    var KWcm3ToHPin3 = 21.9754;     // KW/cm^3 -> HP/in^3
+    var NMtoFtLbs    = 0.73756;     // Nm -> Foot-Pounds
+    var GPtoPSI6     = 0.14503;     // GigaPascals -> PSI*10^6
+    var cm3ToIn3     = 0.06102;
+    var KGtoLbs      = 2.20462;
+
+    var useMetric    = false;
+    var convertUnits = false;
 
     function new_compute()
     {
@@ -252,34 +265,39 @@
 
         equations.parameter = [];   // A little hacky.  Don't like it.  Need equation -> parameter mapping.
 
+        var METRIC      =        constant ('METRIC',  false,true,1);    useMetric = METRIC.v;       // Total hack..
+        var BALLNOSE    =        constant ('BALLNOSE',false,true,1);
+        var ADAPTIVE    =        constant ('ADAPTIVE',false,true,1);
+
         // ---------------------------------------------------------
         // Define the parameters & constants for the optimizer
-        //                                 Name            Digits  Min     Max
-        var L           =        constant ('L',                 2,  0.01,   10);
-        var TEETH       =        constant ('TEETH',             0,  1,      99);
-        var UNITPOWER   =        constant ('UNITPOWER',         4,  0.01,   10);        // HP / cu.in.
-        var E           =        constant ('E',                 2,  0.01,   999);       // Modulus of Elasticity (pounds per sq. inch)
-        var PEAK_TQ_RPM =        constant ('PEAK_TORQUE_RPM',   0,  1,      99999);     // RPM at which we reach peak Torque
-        var DIAMETER    =        constant ('DIAMETER',          4,  0.0001, 99);
-        var HELIX       =        constant ('HELIX',             0,  0,      90);
-        var BALLNOSE    =        constant ('BALLNOSE',          0,  false,  true);
-        var ADAPTIVE    =        constant ('ADAPTIVE',          0,  false,  true);
-        var RESERVE_HP  =        constant ('RESERVE_HP',        0,  0,      300);
-        var RESERVE_TORQUE=      constant ('RESERVE_TORQUE',    0,  0,      300);
+        //                                 Name            Digits  Min     Max     Metric->Imperial
+        var L           =        constant ('L',                 2,  0.01,   10,    mmToInch);
+        var TEETH       =        constant ('TEETH',             0,  1,      99,    1);
+        var UNITPOWER   =        constant ('UNITPOWER',         4,  0.01,   10,    1);              // HP / cu.in. -- No Metric for now
+        var E           =        constant ('E',                 2,  0.01,   999,   1);              // Modulus of Elasticity (pounds per sq. inch -- No metric for now)
+        var PEAK_TQ_RPM =        constant ('PEAK_TORQUE_RPM',   0,  1,      99999, 1);              // RPM at which we reach peak Torque
+        var DIAMETER    =        constant ('DIAMETER',          4,  0.0001, 99,    mmToInch);
+        var HELIX       =        constant ('HELIX',             0,  0,      90,    1);
+        var RESERVE_HP  =        constant ('RESERVE_HP',        0,  0,      300,   1);
+        var RESERVE_TORQUE=      constant ('RESERVE_TORQUE',    0,  0,      300,   1);
 
         // Order of parameters here defines the order of the 'finalize' pass:
-        var RPM         =        parameter('RPM',               0,  1,      99999);
-        var AdjustedIPT =        parameter('AdjIPT',            4,  0.0001, 0.5);       // Should setup with same values as chipload
-        var IPM         =        parameter('IPM',               1,  0.1,    9999);
-        var MRR         =        parameter('MRR',               2,  0.01,   999);
-        var HP          =        parameter('HP',                2,  0.01,   999);
-        var TORQUE      =        parameter('TORQUE',            2,  0.01,   9999);
-        var P           =        parameter('P',                 2,  0.01,   9999);      // Tangential cutting force (lbs)
-        var DEFLECTION  =        parameter('DEFLECTION',        5,  0,      0.01);
-        var SFM         =        parameter('SFM',               0,  1,      9999);
-        var CHIPLOAD    =        parameter('CHIPLOAD',          4,  0.0001, 0.5);       // Actual chipload
-        var WOC         =        parameter('WOC',               3,  0.001,  99);        // Width of Cut (radial engagement)
-        var DOC         =        parameter('DOC',               3,  0.001,  99);        // Depth of Cut (axial engagement)
+        var RPM         =        parameter('RPM',               0,  1,      99999, 1);
+        var AdjustedIPT =        parameter('AdjIPT',            4,  0.0001, 0.5,   mmToInch);       // Should setup with same values as chipload
+        var IPM         =        parameter('IPM',               1,  0.1,    9999,  mmToInch);
+        var MRR         =        parameter('MRR',               2,  0.01,   999,   cm3ToIn3);
+        var HP          =        parameter('HP',                2,  0.01,   999,   KWToHP);
+        var TORQUE      =        parameter('TORQUE',            2,  0.01,   9999,  NMtoFtLbs);
+        var P           =        parameter('P',                 2,  0.01,   9999,  KGtoLbs);        // Tangential cutting force (lbs)
+        var DEFLECTION  =        parameter('DEFLECTION',        5,  0,      0.01,  mmToInch);
+        var SFM         =        parameter('SFM',               0,  1,      9999,  SMMtoSFM);
+        var CHIPLOAD    =        parameter('CHIPLOAD',          4,  0.0001, 0.5,   mmToInch);       // Actual chipload
+        var WOC         =        parameter('WOC',               3,  0.001,  99,    mmToInch);       // Width of Cut (radial engagement)
+        var DOC         =        parameter('DOC',               3,  0.001,  99,    mmToInch);       // Depth of Cut (axial engagement)
+
+        // Total hack..
+        convertUnits = false;
 
         // --------------------------------
         // Scale some of the user values..
@@ -310,22 +328,23 @@
         // - Most equations from:
         //   http://www.ingersoll-imc.com/products/ingersoll_cat-009_technical.pdf
         //
-        var AvailableTorque          = derived( 'AVAIL',     [RPM],     function() { return Math.min(1,PEAK_TQ_RPM.v / RPM.v) * MAX_TORQUE });
-        var EffectiveDiameter        = derived( 'EFFECTIVE', [DOC],     function() { return (!ballnose || DOC.v >= RADIUS) ? DIAMETER.v : 2 * Math.sqrt( Math.pow(RADIUS,2) - Math.pow(RADIUS - DOC.v,2) ) });
+        var AvailableTorque          = derived( 'AVAIL',     NMtoFtLbs, [RPM],     function() { return Math.min(1,PEAK_TQ_RPM.v / RPM.v) * MAX_TORQUE });
+        var EffectiveDiameter        = derived( 'EFFECTIVE', mmToInch,  [DOC],     function() { return (!ballnose || DOC.v >= RADIUS) ? DIAMETER.v : 2 * Math.sqrt( Math.pow(RADIUS,2) - Math.pow(RADIUS - DOC.v,2) ) });
         // Axial chip thinning: Use DOC & actual radius
-        var AxialChipThinningFactor  = derived( 'ACTF',      [DOC],     function() { return (!ballnose || DOC.v >= RADIUS) ? 1          : Math.min( 1, Math.sqrt(1-Math.pow(1-(DOC.v/RADIUS),2))) });
+        var AxialChipThinningFactor  = derived( 'ACTF',      1,         [DOC],     function() { return (!ballnose || DOC.v >= RADIUS) ? 1          : Math.min( 1, Math.sqrt(1-Math.pow(1-(DOC.v/RADIUS),2))) });
         // Radial chip thinning: Use WOC & effective diameter
-        var RadialChipThinningFactor = derived( 'RCTF',      [DOC,WOC], function() { return (!adaptive || WOC.v >= EffectiveDiameter.v/2) ? 1 : Math.min( 1, Math.sqrt(1-Math.pow(1-(2*WOC.v/EffectiveDiameter.v),2))) });
-        var FeedCorrectionFactor     = derived( 'FCF',       [DOC,WOC], function() { return AxialChipThinningFactor.v * RadialChipThinningFactor.v });
+        var RadialChipThinningFactor = derived( 'RCTF',      1,         [DOC,WOC], function() { return (!adaptive || WOC.v >= EffectiveDiameter.v/2) ? 1 : Math.min( 1, Math.sqrt(1-Math.pow(1-(2*WOC.v/EffectiveDiameter.v),2))) });
+        var FeedCorrectionFactor     = derived( 'FCF',       1,         [DOC,WOC], function() { return AxialChipThinningFactor.v * RadialChipThinningFactor.v });
 
         // Equation from: http://zero-divide.net/?shell_id=151&article_id=4257
-        var ToolEngagementAngle      = derived( 'TEA',       [DOC,WOC], function() { return toDegrees( Math.acos( 1 - WOC.v / RADIUS ) ) });
+        var ToolEngagementAngle      = derived( 'TEA',       1,         [DOC,WOC], function() { return toDegrees( Math.acos( 1 - Math.min(WOC.v,DIAMETER.v) / RADIUS ) ) });
 
         // Rule-of-Thumb Plunge calculation.. TODO: design a better equation
-        var PlungeIPM                = derived( 'PLUNGE',    [IPM],     function() { return IPM.v / TEETH.v });
+        var PlungeIPM                = derived( 'PLUNGE',    mmToInch,  [IPM],     function() { return IPM.v / TEETH.v });
 
         // Display ounce-inch torque alongside the inch-pound torque
-        var TorqueOz                 = derived( 'TORQUEOZ',  [TORQUE],  function() { return TORQUE.v * 16 });
+        // TODO: No Metric equivelent...
+        var TorqueOz                 = derived( 'TORQUEOZ',  1,         [TORQUE],  function() { return TORQUE.v * 16 });
 
         // --------------------------------------------------------------------------------
         // TODO: More advanced torque curve: lookup table with linear approximation between entries
@@ -349,7 +368,6 @@
         equation( P,           function() { return (HP.v * OneHP) / SFM.v } );
 
         // "Cantilevered Beam Deflection with Point Load at end of Beam"  (http://www.engineersedge.com/beam_calc_menu.shtml)
-        // TODO: Probably need to use 
         equation( DEFLECTION,  function() { return (P.v * Math.pow(L.v ,3)) / (3 * E.v * I) } );
 
 
@@ -449,7 +467,7 @@
             for (var index = 0; index < inputs.length; ++index)
             {
                 var v = inputs[index];
-                if ( v.id != "" )
+                if ( v.id != "" && v.id != "in_METRIC") // Don't save the metric setting; everything else is imperial.
                 {
                     if ( v.type == "checkbox" )
                         params += v.id + '=' + v.checked + '&'; 
@@ -485,14 +503,15 @@
     var domArray  = [[0,0,0,0,0]];
 
     // Allocate an input parameter that remains constant
-    function constant(name,decimals,min,max)
+    function constant(name,decimals,min,max,metToImp)
     {
         var p     = {};
         p.name    = name;
-        p.max     = getValue('in_'+name);
+        p.max     = getValue('in_'+name, metToImp);
         p.min     = p.max;
         p.v       = p.max;
         p.decimals= 5;
+        p.metToImp= metToImp; // Metric to Imperial conversion
         constants.push(p);
 
         setupValue('in_'+name, min, max );  // this should go in a page-load function, not here
@@ -500,12 +519,12 @@
     }
     
     // Allocate an input parameter with MIN/MAX range
-    function parameter(name,decimals,min,max)
+    function parameter(name,decimals,min,max,metToImp)
     {
         var p       = {};
         p.name      = name;
-        p.min       = getValue('min_'+name);
-        p.max       = getValue('max_'+name);
+        p.min       = getValue('min_'+name, metToImp);
+        p.max       = getValue('max_'+name, metToImp);
         if ( p.min >= p.max ) highlightInputs(name,"pink");
         p.min       = Math.min( p.min, p.max );   // Force min <= max
         p.v         = p.max;
@@ -513,9 +532,11 @@
         p.equations = [];
         p.derived   = [];
         p.dynamics  = [];
+        p.metToImp  = metToImp; // Metric to Imperial conversion
         parameters.push(p);
 
-        if ( p.min == p.max && p.max == 0 ) { p.min = min; p.max = max; }     // Special case: no input from form, use the limits provided.
+//        if ( p.min == 0 ) p.min = 0.00001;
+        if ( p.max == 0 ) p.max = 99999;
 
         // Setup HTML with event handlers, min/max/step, etc..  (TODO: this should go in a page-load function)
         setupValue('min_'+name, min, max );
@@ -533,7 +554,7 @@
     };
 
     // Add a derived value to be computed during optimization
-    function derived(name,vs,fn)
+    function derived(name,metToImp,vs,fn)
     {
         var p     = {};
         p.name    = name;
@@ -542,6 +563,7 @@
         p.v       = 0;
         p.decimals= 5;
         p.equation= fn;
+        p.metToImp= metToImp
         constants.push(p);
         for (var i = 0; i < vs.length; i++) // Register this derived constant so it is updated when these parameters change.
             vs[i].derived.push(p);
@@ -633,9 +655,15 @@
         highlight('max_'+name,color);
         highlight('in_'+name,color);
     }
-    
+
+    function outputConversion(val,scale)
+    {
+        if ( useMetric ) return roundTo( val / scale, 4 );
+        return val;
+    }
+
     // Get a parameter value from the input form, validate & highlight errors
-    function getValue(n)
+    function getValue(n,scale)
     {
         var v = document.getElementById(n);
         if ( v == null )  return 0;
@@ -643,9 +671,26 @@
         if ( v.type == "checkbox" )
             return v.checked;
 
-        var x = parseFloat(v.value);
-        highlight( n, isNumeric(x) ? "" : "yellow");    // Highlight non-number inputs
-        return Math.max(0,x);                           // Don't allow negatives
+        var x = eval(v.value); //parseFloat(v.value);
+//        if ( !isNumeric(x) ) x = eval(v.value);
+        highlight( n, isNumeric(x) ? "" : "yellow");        // Highlight non-number inputs
+//        console.info(n,v.value,'=',x);
+
+        // Case 1: no Metric, no Conversion     -- Inputs are Imperial, don't convert them
+        // Case 2: no Metric, with Conversion   -- Inputs are Metric,   convert to Imperial
+        // Case 3: Metric,    no Conversion     -- Inputs are Metric,   don't convert them
+        // Case 4: Metric,    with Conversion   -- Inputs are Imperial, convert to Metric
+
+        if ( !useMetric && !convertUnits ) { in_scale = 1;     out_scale = 1; }
+        if ( !useMetric &&  convertUnits ) { in_scale = scale; out_scale = 1; }
+
+        if (  useMetric && !convertUnits ) { in_scale = scale; out_scale = 1; }
+        if (  useMetric &&  convertUnits ) { in_scale = 1;     out_scale = 1/scale; }
+
+        ret = Math.max( 0, x * in_scale);                   // Don't allow negatives
+        if ( convertUnits )
+            v.value = roundTo( ret * out_scale, 4 );        // Convert values in place
+        return ret;
     }
 
     // Setup HTML events, min/max/step, etc.
@@ -656,10 +701,10 @@
         if ( v.type == "checkbox" )  return;
 
         v.setAttribute("onchange", "inputChanged('"+n+"')" ); // Pass the ID into the change function
-        v.setAttribute("min", min);
-        v.setAttribute("max", max);
-        v.setAttribute("step", (min == 0) ? 0.0001 : min);
-        v.setAttribute("type", "number");
+//        v.setAttribute("min", min);
+//        v.setAttribute("max", max);
+//        v.setAttribute("step", (min == 0) ? 0.0001 : min);
+//        v.setAttribute("type", "number");
     }
 
     function update_derived(p)
@@ -698,6 +743,12 @@
         return valid;
     }
 
+    function convertAll()
+    {
+        convertUnits = true;
+        inputChanged(null);
+    }
+
     // Update the display with the values of the variables
     function display(vs)
     {
@@ -707,22 +758,17 @@
             
             if ( item != null )
             {
-                item.innerHTML = vs[i].v;
+                item.innerHTML = outputConversion( vs[i].v, vs[i].metToImp );
 
                 // Highlight values near their limits..
-                var close_to_limit = //Math.abs(vs[i].v - vs[i].min) <  (vs[i].min * 0.05) ||  // Within 5% of min or max?
-                                     Math.abs(vs[i].v - vs[i].max) <  (vs[i].max * 0.05);
+                var close_to_limit = Math.abs(vs[i].v - vs[i].max) <  (vs[i].max * 0.05);
                 var beyond_limit = vs[i].v < vs[i].min ||
                                    vs[i].v > vs[i].max ||
                                    !isNumeric(vs[i].v);
 
-                // Don't highlight the value if it has been pinned by the user (MIN = MAX).
-                item.style.backgroundColor = "";
-                if (vs[i].min != vs[i].max)
-                {
-                    if ( beyond_limit )         item.style.backgroundColor = "red";
-                    else if ( close_to_limit )  item.style.backgroundColor = "orange";
-                }
+                if ( beyond_limit )         item.style.backgroundColor = "red";
+                else if ( close_to_limit )  item.style.backgroundColor = "orange";
+                else item.style.backgroundColor = "";
             }
 //            else
 //                console.info( 'Missing: ', vs[i].name );
@@ -790,7 +836,7 @@
         {
             // Load SFM & Chipload from the table.
             document.getElementById('max_SFM').value = cutParameters[vTool][vMat][0];
-            document.getElementById('max_CHIPLOAD').value = roundTo( document.getElementById('in_DIAMETER').value / cutParameters[vTool][vMat][1], 4);
+            document.getElementById('max_CHIPLOAD').value = roundTo( eval(document.getElementById('in_DIAMETER').value) / cutParameters[vTool][vMat][1], 4);
             uxDisable("max_SFM");
             uxDisable("max_CHIPLOAD");
         }

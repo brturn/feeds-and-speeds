@@ -66,7 +66,8 @@
         </form>
 
         <p>
-	<a href="http://brturn.github.io/feeds-and-speeds">Take me back to the Calculator!</a>
+	<a href="http://brturn.github.io/feeds-and-speeds">Take me back to the Calculator!</a><br/>
+    <a href="http://brturn.github.io/feeds-and-speeds/beta.html">Take me back to the BETA - HSM Calculator!</a> <br/>
 	<br/>
 	Table of Contents:
         <ul>
@@ -78,13 +79,16 @@
 	</p>
 
 		<hr>
+        <h3>What is this?</h3>
+        <p>This is a calculator for computing the correct feeds and speeds (RPM and IPM) for milling machines.  It differs from other online calculators because it is an OPTIMIZING calculator -- each parameter has a range from minimum to maximum.  The calcuator searches for the best cut (maximizing MRR) while keeping all parameters within the range you specify.  This is a unique feature among milling calculators, no other calculator gives you this much control over your cut!</p>
+        <p>The calculator also includes many features not available from other calcuators: radial &amp; axial chip thinning, computing speedups for HSM paths, shank diameter, stickout, torque limits, deflection limits, axial &amp; radial force limits, etc.  These features are often offered as separate 'wizards' on other calculators, but they are built into and optimized along with all other parameters in this calculator.</p>
 
         <h3 id="beginner">Beginners - READ ME</h3>
-        Most CAM software does not generate toolpaths with constant tool engagements.  If you blindly use the data from this (or any!) calculator you will break bits.  Until you become more familiar with the intricacies of CAM programming, follow these simple rules:
+        Most CAM software does not generate toolpaths with "constant tool engagement".  If you blindly use the data from this (or any!) calculator you will break end mills.  Until you become more familiar with the intricacies of CAM programming, follow these simple rules:
         <ul>
             <li>Really measure your tool's stickout - it's important!  Try to minimize the stickout by using the shortest bit that can do the work, and sliding the bit as far as possible into the tool holder.</li>
             <li>Set the min and max Width of Cut (WOC) to be the same as the tool's DIAMETER. This is called a 'full slot' cut, and will provide safer speeds &amp; feeds. (Tip: leave a few thousandths difference between min and max.)</li>
-            <li>Get the maximum 'Surface Feet per Minute' (max SFM) and maximum 'Chipload' (also called Inches per Tooth - IPT) values from your tool vendor, and tell them you are 'slotting'.</li>
+            <li>Get the maximum 'Surface Feet per Minute' (max SFM) and maximum 'Chipload' (also called Inches per Tooth - IPT) values from your tool vendor, tell them you are 'slotting'.</li>
             <li>Enter all the values and press 'Calculate'.</li>
             <li>Program your CAM to use the displayed RPM and IPM, but use only 50% of the depth (ie: if the results show 0.2" DOC, then program your CAM to use only 0.1" DOC).</li>
             <li>Check how nice the cut looks - smooth sides and bottom?  No chatter?  Gradually increase the DOC until your tool, machine, material, or clamping complains.</li>
@@ -96,14 +100,13 @@
 	    	<li>Fill in each box to the best of your knowledge.</li>
 		    <li>Get SFM and Chipload from your tool vendor.</li>
 		    <li>Press "Calculate" to generate cut parameters.</li>
-		    <li>Check graphs at bottom to compare different cuts. Look for clusters of bubbles.</li>
-		    <li>Refine the entries in the calcuator to 'zoom in' on the clusters and explore their parameters.</li>
-            <li>Each time you press Calculate, 100 new cut variations are tried.  The best 20 cuts (by MRR) from all runs will be shown in the graphs.</li>
+            <li>Each time you press Calculate, 100 new cut variations are tried.  The best cut (by MRR) from all runs will be shown in the results.</li>
+            <li>Test the cut using lower engagement than the calculator suggests, gradually increasing engagement as you prove out the cut.</li>
+            <li>If the machine, cutter, material, or clamping is inadequate to meet the calculated values, adjust the inputs to allow for reduced cutting pressures; try reducing SFM, deflection, torque, HP, etc. and re-computing the feeds and speeds.</li>
 		</ul>
 
 	    <h3>What do the colors mean?</h3>
 	    <ul>
-			<li>Light Blue: parameters which may be limiting the variety of offered cuts (ie: max DOC may be highlighted if you are cutting too shallowly).</li>
 	    	<li>Orange: the highlighted parameters are near their range limits.</li>
 	    	<li>Pink/Red input field: The input is invalid, or min = max (leave a few thou between min and max).</li>
             <li>Pink/Red results: the cut optimizer failed -- DO NOT USE the displayed cut parameters.</li>
@@ -144,7 +147,7 @@
 	    </ul>
 
         <h3 id="example">Can you walk me through an example?</h3>
-        <b>Sure!</b>
+        <b>Sure! [NOTE: This was for an older version of the calculator without the optimizer]</b>
         <ul>
             <li>I own a Tormach 770 milling machine.</li>
             <li>I bought a bunch of HTC Tool's double-ended 3/8" HSS 3-Flute cutters to use for roughing 6061-T6 Aluminum.</li>
@@ -153,18 +156,18 @@
         <ul>
             <li>The Tormach 770 is: 1 HP, 525-10350 RPM for the high speed range, max 135 IPM.</li>
             <li>Peak Torque RPM: 5020  (WHY: Motors like mine generate their peak torque at their 'native' drive frequency.  I look on the motor housing to see this one is rated for 60 Hz power.  Due to pulleys, the Tormach's spindle doesn't drive the motor in 1:1 ratio with the commanded speed, so the RPM listed on the motor housing is not useful.  Instead, I commanded the speed of the motor using Mach 3 then read the display of the VFD to see what Hz it was generating.  At a commanded speed of 5020 RPM, the VFD generated 60 Hz, so this is the value I use for "Peak Torque RPM."  I only have to test this once for this machine. It won't change unless the drive chain is modified.)</li>
-            <li>The tool is HSS (27x10^6 PSI), 0.375" diameter, 3-teeth, with a Helix angle of approximately 30-degrees (by sight).</li>
+            <li>The tool is HSS (27x10^6 PSI), 0.375" diameter, 3-teeth, with a Helix angle of approximately 30-degrees (estimated by eye).</li>
             <li>Stickout: I mounted the tool in the tool holder and slid it as far in as I felt comfortable, which left 0.9" of the tool sticking out.</li>
             <li>Material: Aluminum (which selects Unit Power, SFM and Chipload automatically).</li>
-            <li>I'm using these end mills for slotting, so I set WOC to 0.375".  (TIP: Sometimes it's hard to read the graphs when the bubbles are all on top of each other.  To ease this, leave a few thousandths between the min and max of any value.  In this case I entered min WOC 0.373" and max WOC of 0.375".)</li>
+            <li>I'm using these end mills for slotting, so I set WOC to 0.375".  (TIP: The optimizer works best when there is a range to search, leave a few thousandths between the min and max of any value.  In this case I entered min WOC 0.373" and max WOC of 0.375".)</li>
             <li>For the DOC I left things wide open: 0.01" - 0.75" (The max was chosen because these cutters only have 0.75" of sharpened flute.)</li>
             <li>I left maximum Deflection at its default of 0.001".  For a finish cut I might lower it to 0.0005 or less.</li>
-            <li>Finally, since this is a full-slot cut, there will not be any issues with the cutter suddenly slamming into a corner of a pocket, so I select only 5% reserve HP and Torque.  Adaptive roughing remains off because this toolpath will not be generated using my CAM's adaptive roughing strategy.</li>
+            <li>Finally, since this is a full-slot cut, there will not be any issues with the cutter suddenly slamming into a corner of a pocket, I chose not to de-rate the HP or torque.  HSM remains off because this toolpath will not be generated using my CAM's adaptive roughing strategy.</li>
         </ul>
 
         <b>Ok!  Those are my parameters; I only had to find one value by measuring the stickout.</b>
         <ul>
-            <li>I hit Calculate once and scroll down to view the graphs.</li>
+            <li>I hit Calculate once and scroll down to view the results.</li>
             <li>The 'heat map' of the graph spans MRR rates from 2.71 up to 3.3 MRR.  That's a pretty wide range and I want to be heavy roughing (high MRR), so I press Calculate a few more times to gather more results.  The low-end MRR climbs up to 3.31 while the high end creeps up to 3.39.  A few more button presses and it narrows to 3.31-3.39, which tells me it has collected essentially all of the highest-MRR cuts for this set of parameters.</li>
             <li>A quick scan of the graph tells me that the bubbles are clustered at low-DOC values, and only a few points are deeper than 0.4".  This suggests I should focus the search at shallower depths.</li>
             <li>I change the max DOC to 0.4" and press Calculate a few times.</li>
